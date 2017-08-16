@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<!-- Seems to be fully functional...trying to add a zoom to layer button on layersControl -->
+<html>
+	<head>
+		<title>USGS CMG Video & Photo Portal</title>
+		<meta charset="utf-8">
+		<style>
+			html, body {
+			height: 100%;
+			width: 100%;
+			margin: 0;
+			padding: 0
+			}			
+			#map {
+				bottom:0px;
+				height: 100%;
+				left: 0px;
+				position: relative;
+				right: 0px;
+				cursor: default;
+			}		
+			.leaflet-interactive {
+				cursor: default;
+			}
+			.leaflet-tooltip.leaflet-clickable {
+				cursor: default;
+			}
+			
+			.vidPlayer {
+				bottom: 25px;
+				padding: 6px 8px;
+				font: 14px/16px Arial, Helvetica, sans-serif;
+				background: white;
+				background: rgba(255,255,255,0.8);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 5px;
+			}
+			.vidPlayer h4 {
+				text-align: center;
+				margin: 0 0 5px;
+				color: #777;
+			}
+			.picViewer {
+				bottom: 25px;
+				padding: 6px 8px;
+				font: 14px/16px Arial, Helvetica, sans-serif;
+				background: white;
+				background: rgba(255,255,255,0.8);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 5px;
+				max-height: 236.25px;
+				overflow: auto;
+			}
+			.picViewer h4 {
+				text-align: center;
+				margin: 0 0 5px;
+				color: #777;
+			}
+			ul {
+				margin: 0;
+				padding: 0;
+				list-style: none;
+			}
+
+			.container {
+				width: 1000%;
+				margin: auto;
+				min-width: 1100px;
+				max-width: 1300px;
+				position: relative;
+			}
+			.title {
+				font-size: 14px;
+				font-weight: 1000;
+				font-family: Arial, sans-serif;
+				color: #000;
+				padding: 2px 24px;
+				display: inline-block;
+				position: relative;
+				background-color: #fff;
+			}
+			.block__list h4 {
+				text-align: center;
+				margin: 0 0 5px;
+				color: #777;	
+			}
+			.block__list {
+				font: 14px/16px Arial, Helvetica, sans-serif;
+				padding: 6px 3px;
+				max-width: 250px;
+				margin-top: 0px;
+				margin-left: 0px;
+				background: rgba(255,255,255,0.8);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 5px;
+			}
+			.block__list_words li {
+				font-size: 14px/16px;
+				font-weight: 300;
+				font-family: Arial, sans-serif;
+				background-color: rgba(255,255,255,0);
+				padding: 1px 10px;
+			}
+			.leaflet-control-layers h4 {
+				text-align: center;
+				margin: 0 0 5px;
+			}
+			.leaflet-control-layers {
+				font-weight: bold;
+				text-align: center;
+				margin: 0 0 5px;
+			}
+			.leaflet-control-layers div {
+				display: block;
+				font-weight: normal;
+				text-align: left;
+			}
+			.leaflet-control-wms-legend {
+				display: block;
+				font-weight: bold;
+				text-align: center;
+				margin: 0 0 5px;
+				align: top;
+			}
+			.leaflet-control-wms-legend img {
+				display: block;
+				position: relative;
+				bottom: 0px;
+				align: middle;
+				margin: auto;
+			}
+			#lowerDiv a {
+				font-family: Arial, sans-serif;
+				font-size: 10px;
+				color: black;
+				position: absolute;
+				left: 8px;
+				top: 10px;
+			}
+			.button {
+				background-color: black;
+				border: none;
+				color: white;
+				float: right;
+				text-align: center;
+				padding: 3px 1px;
+				text-decoration: none;
+				margin-top: 7px;
+				margin-right: 8px;
+				cursor: pointer;
+				font-size: 10px;
+				border-radius: 1.5px;
+			}
+			.legend .photoCircle {
+				border-radius: 50%;
+				width: 10px;
+				height: 10px;
+				margin-top: 8px;
+				color: darkOrange;
+			}
+			.legend .vidCircle {
+				border-radius: 50%;
+				width: 13px;
+				height: 13px;
+				margin-top: 8px;
+				color: darkRed;
+			}
+				
+				
+		</style>
+		<!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"/>    Original source leaflet; had to change a few things-->
+		<link rel="stylesheet" href="./css/leaflet.css" />
+			
+		<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+		<script src="https://unpkg.com/esri-leaflet@2.0.8"></script> 
+		
+		<link rel="icon"
+			type = "image/ico"
+			href="https://raw.githubusercontent.com/usgs/earthquake-eventpages/master/test/favicon.ico"/>
+		
+	</head>
+	
+	<body>
+
+		<div id="map" style="height: 100%; width: 100%;"></div>
+		<script type="text/javascript" src="./js/geojson.min.js"></script>
+		
+		<script type="text/javascript" src="./js/jQuery.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+		
+		<link rel="stylesheet" href="./css/L.Control.ZoomBox.css" />
+		<script src="./js/L.Control.ZoomBox.min.js"></script>
+		<script src="./js/Leaflet.VectorGrid.js"></script>
+				
+		<link rel="stylesheet" href="./css/leaflet.wmslegend.css"/>
+		<script src="./js/leaflet.wmslegend.js"></script>
+
+		<script type="text/javascript">
+			// Load the IFrame Player API code asynchronously.
+			var tag = document.createElement('script');
+			tag.src = "https://www.youtube.com/player_api";
+			var firstScriptTag = document.getElementsByTagName('script')[0];
+			firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+			
+			var ESRIOceanBaseMap = L.esri.basemapLayer("Oceans", {
+				maxZoom: 18,
+				zIndex: 100,
+			});
+			
+			var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+				maxZoom: 18,
+				attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+				zIndex: 100,
+			});
+			
+			var road_map = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+				maxZoom: 25,
+				attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+					'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+					'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+				id: 'mapbox.streets',
+				zIndex: 100,
+			});		
+			var map = L.map('map', {layers: [ESRIOceanBaseMap]}).setView([33.905, -120.2], 17);
+			var baseLayers = {
+				"Oceans": ESRIOceanBaseMap,
+				"World Imagery": Esri_WorldImagery,
+				"Streets": road_map
+			};
+			
+			L.control.layers(baseLayers).addTo(map);		
+			
+			jQuery.extend({
+				getValues: function(url) {
+					var result = null;
+					$.ajax({
+						type: "GET",
+						url: url,
+						dataType: "JSON",
+						async: false,
+						success: function(data) {
+							result = data;
+						}
+					});
+					return result;
+				}
+			});
+			
+			var style = {
+				radius: 1.75,
+				fillColor: "darkred",
+				color: "darkred",
+				pane: 'overlayPane'
+			};
+			
+			var picStyle = {
+				radius: 0.25,
+				fillColor: "blue",
+				color: "blue",
+				pane: 'shadowPane'
+			};
+			
+			var markerIcon = L.icon({
+				iconUrl: 'https://raw.githubusercontent.com/evantdailey/map_testing/master/dot3a_tnsp.png',
+				iconSize: [17,17],
+			});
+						
+			var playerIcon = L.icon({
+				iconUrl: 'https://raw.githubusercontent.com/evantdailey/map_testing/master/dot2_tnsp.png',
+				iconSize: [12,12],
+			});
+			
+		
+			// Make the video player
+			var vidPlayer = L.control({position: 'bottomleft'});
+			vidPlayer.onAdd = function(map) {
+				this._div = L.DomUtil.create('div', 'vidPlayer');
+				this._div.id = "player";
+				this._div.innerHTML = '<h4>USGS CMG Video</h4>';
+				this.update();
+				return this._div;
+			};
+				
+			vidPlayer.update = function (player) {
+				this._div.innerHTML = '<h4>USGS CMG Video</h4>' + (player ?  player + '<br />' : 'Select a video');
+			};
+			vidPlayer.addTo(map);
+			
+			// Make the picture viewer
+			var picViewer = L.control({position:"bottomleft"});
+			picViewer.onAdd = function(map) {
+				this._div = L.DomUtil.create('div', 'picViewer');
+				this._div.id = "picture";
+				this._div.innerHTML = '<h4>USGS CMG Photo</h4>';
+				this.update();
+				return this._div;
+			}
+			
+			picViewer.update = function(picHTML) {
+				this._div.innerHTML = '<h4>USGS CMG Photo</h4>' + (picHTML ?  picHTML + '<br />' : 'Select a photo');
+			};
+			picViewer.addTo(map);			
+					
+			// Sort the data so the points with pictures are drawn last (for visual appearance):
+			function sortByProp(property) {                // Function found online at: https://davidsimpson.me/2014/05/22/how-to-sort-an-array-of-json-arrays/
+				return function (x, y) {
+					return ((x[property] === y[property]) ? 0 : ((x[property] > y[property]) ? 1 : -1));
+				};
+			};
+
+			// Global variables used in functions below:
+			var clickMarker, marker, YT_id, vidSec, lat, lng, player, vidPopup, picHTML, playbackSeconds, timer, layr, photo, clickPoint, currentAngle, videos = [];
+	
+			// Create the Vector Tile Layer:
+			var vectorTileOptions = {
+				pane: 'markerPane',
+				rendererFactor: L.canvas.tile,
+				maxZoom: 25,
+				tolerance: 10000,
+				indexMaxPoints: 0,
+				buffer: 1,
+				vectorTileLayerStyles: {
+					sliced: 
+						function(properties) {
+							var photo = properties.picture;
+							if (photo != 'NA' && photo != "" && photo != undefined){
+								return {
+									pane: 'shadowPane',
+									radius: 0.25,
+									color: 'DarkOrange',
+								}
+							} else {
+								return {
+									radius: 2.75,
+									color: 'DarkRed',
+									pane: 'overlayPane',
+									zIndex: -51,
+								}
+							}
+						}
+					},
+				radius: 1,
+				interactive: true,
+				pane: 'my-overlays',
+			}
+			
+			// This part creates a map pane to which all vector tile layers are added, then when mouse clicked anywhere on map all values in all layers are returned
+			overlayPane = map.createPane('my-overlays');
+			L.DomEvent.on(overlayPane, 'click', function(e) {
+				if (e._stopped) { return; }
+
+				var target = e.target;
+				var stopped;
+				var removed;
+				var ev = new MouseEvent(e.type, e)
+
+				removed = {node: target, display: target.style.display};
+				target.style.display = 'none';
+				target = document.elementFromPoint(e.clientX, e.clientY);
+
+				if (target && target !== overlayPane) {
+					stopped = !target.dispatchEvent(ev);
+					if (stopped || ev._stopped) {
+						L.DomEvent.stop(e);
+					}
+				}
+
+				removed.node.style.display = removed.display;
+			});
+					
+			function theBigOne(data) {
+				layer = L.vectorGrid.slicer(data, vectorTileOptions)
+					//This part is the equivalent of the "onEachFeature" function in the original verison
+					.on('click', function(e) {
+						clickPoint = e;
+						lat = e.latlng.lat;
+						lng = e.latlng.lng;
+						id = e.layer.properties.id;
+						YT_id = e.layer.properties.youtube_id;
+						vidSec = e.layer.properties.video_second;
+						photo = e.layer.properties.picture;
+						if(e.layer.properties.angle) {
+							currentAngle = e.layer.properties.angle
+						}
+						videos.push(e.layer.properties.video);
+						if (photo != "NA" && photo != "" && photo != undefined) {
+							picHTML = '<a href=' + photo + ' target=\"_blank"><img src=\"' + photo + '\" width="403"></a>';
+							picViewer.update(picHTML);
+						} else {
+							picHTML = 'No photo at this location. <br /> A photo will automatically load when available.'
+						}
+						if (marker) {
+							map.removeLayer(marker);
+						}
+						
+						if (clickMarker) {
+							map.removeLayer(clickMarker);
+							
+							document.getElementById("player").remove();
+							player = undefined;
+							var vidPlayer = L.control({position: 'bottomleft'});
+							vidPlayer.onAdd = function(map) {
+								this._div = L.DomUtil.create('div', 'vidPlayer');
+								this._div.id = "player";
+								this._div.innerHTML = '<h4>USGS CMG Video</h4>'
+								this.update();
+								return this._div;
+							}
+							vidPlayer.update = function (player) {
+								this._div.innerHTML = '<h4>USGS CMG Video</h4>' + (player ? '<h4>USGS CMG Video</h4>' + player + '<br />' : 'Select a video');
+
+							}
+							vidPlayer.addTo(map);
+							clickMarker = new L.Marker([lat,lng], {icon: markerIcon}).addTo(map);
+							player = new YT.Player('player', {
+								height: '236.25',
+								width: '420',
+								videoId: YT_id,
+								playerVars: {
+									autoplay: 0,
+									start: vidSec,
+									rel: 0,
+								},
+								events: {
+									'onReady': onPlayerReady,
+									'onStateChange': onPlayerStateChange
+								}
+							});
+							
+							document.getElementById("picture").remove();							
+							picViewer = undefined;
+							picViewer = L.control({position:"bottomleft"});
+							picViewer.onAdd = function(map) {
+								this._div = L.DomUtil.create('div', 'picViewer');
+								this._div.id = "picture";
+								this._div.innerHTML = '<h4>USGS CMG Photo</h4>';
+								this.update();
+								return this._div;
+							}
+							picViewer.update = function(picHTML) {
+								this._div.innerHTML = '<h4>USGS CMG Photo</h4>' + (picHTML ? picHTML + '<br />' : 'Select a photo');
+							}
+							picViewer.addTo(map);
+							picViewer.update(picHTML);
+							
+						} else {
+							clickMarker = new L.Marker([lat,lng], {icon: markerIcon}).addTo(map);
+							player = new YT.Player('player', {
+								height: '236.25',
+								width: '420',
+								videoId: YT_id,
+								playerVars: {
+									autoplay: 0,
+									start: vidSec,
+									rel: 0,
+								},
+								events: {
+									'onReady': onPlayerReady,
+									'onStateChange': onPlayerStateChange
+								}
+							});
+						}
+						vidPlayer.update(player);
+						picViewer.update(picHTML);
+						try {
+							if(lowerDiv) {
+								document.getElementById('lowerDiv').remove();
+							}
+						} catch (err) {}
+					}).setZIndex(600).addTo(map);
+				return layer;
+			}
+			
+			function onPlayerReady(event) {
+				if(document.getElementById('lowerDiv') === null){
+					lowerDiv = document.createElement('div');
+					lowerDiv.id = "lowerDiv";
+					lowerDiv.style.cssText = 'position:fixed;background:white;box-shadow: 0 0 15px rgba(0,0,0,0.2);bottom:4px;left:10px;border-radius:5px;width:436px;height:30px;opacity:10.6;z-index:1000;background:rgba(255,255,255,0.8);';
+					document.body.appendChild(lowerDiv);
+					link = document.createElement('a');
+					var link1 = 'https://www.youtube.com/watch?v=' + YT_id;
+					link.setAttribute('href', link1);
+					link.setAttribute('target', '_blank');
+					link.innerHTML = "Watch on YouTube and view metadata";
+					lowerDiv.appendChild(link);
+					
+					if(clickPoint.layer.properties.angle) {
+						// Add select camera angle buttons:
+						vertButton = document.createElement('button');
+						vertButton.className = 'button';
+						vertButton.id = 'vertButton';
+						vertButton.innerHTML = "Vertical";
+						lowerDiv.appendChild(vertButton);
+						document.getElementById('vertButton').onclick = vertButtonFunc;
+						obqButton = document.createElement('button');
+						obqButton.className = 'button';
+						obqButton.id = 'obqButton';
+						obqButton.innerHTML = 'Oblique';
+						lowerDiv.appendChild(obqButton);
+						document.getElementById('obqButton').onclick = obqButtonFunc;
+					}
+				}
+				event.target.playVideo();
+			}
+				
+			var lowerDiv;	
+			function onPlayerStateChange(event) {
+				try {
+					if(event.data === 1) {
+						// set timer to do getPlaybackTime function
+						timer = setInterval(getPlaybackTime, 1000);
+						if(clickPoint.layer.properties.angle) {
+							currentAngle = clickPoint.layer.properties.angle;
+						}
+					} else {
+						clearInterval(timer);
+					}
+				} catch(err) {
+					clearInterval(timer);
+				}
+			}
+			
+			// Define functions for the button:
+			var selAngle, currentAngle1;
+
+			// Find the closest: time, lat and lng
+			function closest(num, arr) {
+				var curr = arr[0];
+				var diff = Math.abs(num - curr);
+				for (var val=0; val<arr.length; val++) {
+					var newdiff = Math.abs(num - arr[val]);
+					if(newdiff < diff) {
+						diff = newdiff;
+						curr = arr[val];
+					}
+				}
+				return curr;
+			}	
+			
+			function round(value, decimals) {
+				return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+			}
+			
+			function r5(x) {
+				return Math.ceil(x/5)*5;
+			}
+			
+			function vertButtonFunc() {
+				if(currentAngle1) {
+					currentAngle = currentAngle1
+				}
+				var cLat = closest(marker._latlng.lat, dat1.map(function(a){return Number(a.lat)}));
+				var cLng = closest(marker._latlng.lng, dat1.map(function(a){return Number(a.lon)}));
+				var cSec = closest(playbackSeconds, dat1.map(function(a){return Number(a.video_second)}));
+				var time = playbackSeconds;
+				selAngle = 'vertical';
+				var newVid;
+				try {
+					if(selAngle != currentAngle) {
+						if(playbackSeconds) {
+							newVid = dat1.find(function(element){return Number(element.lat) === cLat && Number(element.lon) === cLng && r5(Number(element.video_second)) === r5(time) && element.angle === selAngle});
+						} else if (vidSec) {
+							newVid = dat1.find(function(element){return Number(element.lat) === clickMarker._latlng.lat && Number(element.lon) === clickMarker._latlng.lng && Number(element.video_second) === vidSec && element.angle === 'vertical'});		
+						}
+						player.loadVideoById(newVid.youtube_id, newVid.video_second);
+					}
+					currentAngle1 = 'vertical';
+				} catch(err){console.log("error " + marker._latlng + " " + time + " " + cLat + " " + cLng)}
+			}
+			
+			function obqButtonFunc() {
+				if(currentAngle1) {
+					currentAngle = currentAngle1
+				}
+				var cLat = closest(marker._latlng.lat, dat1.map(function(a){return Number(a.lat)}));
+				var cLng = closest(marker._latlng.lng, dat1.map(function(a){return Number(a.lon)}));
+				var cSec = closest(playbackSeconds, dat1.map(function(a){return Number(a.video_second)}));
+				selAngle = 'oblique';
+				var time = playbackSeconds;
+				var newVid;
+				try {
+					if(selAngle != currentAngle) {
+						if(playbackSeconds) {
+							newVid = dat1.find(function(element){return Number(element.lat) === cLat && Number(element.lon) === cLng && r5(Number(element.video_second)) === r5(time) && element.angle === selAngle});
+						} else if (vidSec) {
+							newVid = dat1.find(function(element){return Number(element.lat) === marker._latlng.lat && Number(element.lon) === marker._latlng.lng && Number(element.video_second) === vidSec && element.angle === 'oblique'});	
+						}
+						player.loadVideoById(newVid.youtube_id, newVid.video_second);
+					}
+					currentAngle1 = 'oblique';
+				} catch(err){console.log("error " + marker._latlng + " " + time + " " + cLat + " " + cLng)}
+			}
+			
+			// Get current playback time of video, match to navigation record, if playback time matches record for lat lng, add new playback marker
+			function getPlaybackTime() {
+				try {
+					playbackSeconds = Math.round(player.getCurrentTime());
+					function fynd(element) {
+						return element.youtube_id === YT_id && Number(element.video_second) === playbackSeconds;
+					}
+					
+					var result = dat1.find(fynd);
+
+					lat = result.lat;
+					lng = result.lon;
+					photo = result.picture;
+					
+					if (photo != "NA" && photo != "" && photo != undefined) {
+						picHTML = '<a href=' + photo + ' target=\"_blank"><img src=\"' + photo + '\" width="403"></a>';
+						picViewer.update(picHTML);
+					} else {
+						picHTML = 'No photo at this location. <br /> A photo will automatically load when available.'
+					}
+					if (marker) {
+						marker.remove();
+						marker = new L.Marker([lat,lng], {icon: playerIcon, pane: 'popupPane'}).addTo(map);
+					} else {
+						marker = new L.Marker([lat,lng], {icon: playerIcon, pane: 'popupPane'}).addTo(map);
+					}
+					
+				} catch(err) {console.log("trying again");}
+			}
+			
+			// Scale bar
+			L.control.scale({position:"bottomright"}).addTo(map);
+			
+			// Zoom box
+			var zoomControl = L.control.zoomBox({
+				modal: false,  // If false (default), it deactivates after each use.  
+							  // If true, zoomBox control stays active until you click on the control to deactivate.
+				position: "topleft",                  
+			});
+			map.addControl(zoomControl);
+					
+			// Functionality to open a WMS and create map layers from each layer in the WMS
+			var wmsControl, wmsLegendTitles = [];
+			function wmsLayer(wmsHTML) {
+				// Open the WMS html document:
+				var req = new XMLHttpRequest();
+				req.open("GET", wmsHTML, false); 
+				req.send(null);
+				xmlDoc = req.responseXML;
+				
+				var wmsHTML1 = xmlDoc.getElementsByTagName("OnlineResource")[0].getAttribute("xlink:href");
+
+				// Count the number of layers in the WMS:
+				var len = xmlDoc.getElementsByTagName("Layer")[0].getElementsByTagName("Layer").length;
+				
+				// Get the 'Name' and 'Title' attributes from the WMS XML
+				var wmsLayerNames = [];
+				var wmsLayerTitles = [];
+				for (var i=0; i<len; i++) {
+					wmsLayerNames.push(xmlDoc.getElementsByTagName("Layer")[0].getElementsByTagName("Layer")[i].getElementsByTagName("Name")[0].childNodes[0].nodeValue);
+					wmsLayerTitles.push(xmlDoc.getElementsByTagName("Layer")[0].getElementsByTagName("Layer")[i].getElementsByTagName("Title")[0].childNodes[0].nodeValue);
+				}
+				
+				// Make the Leaflet WMS object, a javascript object with a L.tileLayer.wms object for each WMS layer
+				var WMS = {};
+				for (var i=0; i<wmsLayerNames.length; i++) {
+					WMS[wmsLayerTitles[i]] = L.tileLayer.wms(wmsHTML1, {
+						layers: wmsLayerNames[i],
+						format: 'image/png', 
+						transparent: true,
+						maxZoom: 25,
+						zIndex: 550,
+						minZoom: 0,});
+						
+					uri = wmsHTML1;
+					uri += "&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&";
+					uri += "REQUEST=GetLegendGraphic&FORMAT=image/jpeg&LAYER=";
+					uri += wmsLayerNames[i] + "&STYLE=";
+				}
+				
+				var legendTitle = wmsLayerTitles[0].replace(/.*_([A-Z].*)([A-Z].*)\..*/g, '$1 $2')
+				var legendID = wmsLayerTitles[0].replace(/.*_([A-Z].*)([A-Z].*)\..*/g, '$1$2')
+				wmsLegendTitles.push(legendTitle);
+				
+				wmsCustomControl = L.Control.Layers.extend({
+					onAdd: function () {
+						this._initLayout();
+						this._addButton();
+						this._update();
+						this._container.prepend(legendTitle);
+						return this._container;
+					},
+					_addButton: function () {
+						var elements = this._container.getElementsByClassName('leaflet-control-layers-list');
+						var button = L.DomUtil.create('button', 'my-button-class', elements[0]);
+						button.textContent = 'Collapse window';
+						L.DomEvent.on(button, 'click', function(e) {
+							L.DomEvent.stop(e);
+							this._collapse();
+						}, this);
+					}
+				});
+				var wmsControl = new wmsCustomControl(null, WMS, {collapsed: false}).addTo(map);		
+			}					
+			
+			//These two event listeners deal with legends for the active layers (add when layer checked, remove when unchecked)
+			var uri;
+			map.on('overlayadd', function (eventLayer) {
+				var lyr = eventLayer.layer.options.layers;
+				if (lyr) {
+					uri = eventLayer.layer._url + "&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/jpeg&LAYER=" + lyr + "&STYLE=";
+					var legend = L.wmsLegend(uri);
+					legend.container.id = eventLayer.name;
+					var wmsLegendTitle = eventLayer.name.replace(/(.*)_.*/g, '$1');
+					wmsLegendTitle = wmsLegendTitle.replace(/([a-z])([A-Z])/g, '$1 $2');
+					document.getElementById(eventLayer.name).prepend(wmsLegendTitle);
+				}
+			});
+			
+			map.on('overlayremove', function (eventLayer) {
+				var lyr = eventLayer.layer.options.layers;
+				try {
+					document.getElementById(eventLayer.name).remove();
+				} catch (err) {
+					console.log("No legend to remove")
+				}					
+			});
+			
+			var layerList = [], layerNames = [], dat1 = [], boundsList = [], step1;
+			function readData(urlList) {
+				try {
+					document.getElementById("layersControl").remove()
+				} catch(err) {}
+				for(var i=0; i<urlList.length; i++) {
+					var regex = /.*\/(.*)\.json/;
+					var layerName = regex.exec(urlList[i])[1];
+					step1 = $.getValues(urlList[i]);
+					var step2 = GeoJSON.parse(step1.sort(sortByProp('picture')), {Point: ['lat', 'lon']});
+					layerNames.push(layerName);
+					var vtName = layerName + i;
+					layerList.push(theBigOne(step2));
+					dat1 = dat1.concat(step1);
+					lons = step1.map(function(a) {return Number(a.lon)});
+					lats = step1.map(function(a) {return Number(a.lat)});
+					boundsList.push([[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]]);
+				}
+				//Create the layer controls; layerNames is just the names, layerList is the actual layer (vector tile)
+				var dat = toObj(layerNames, layerList);			
+				var layersControl = L.control.layers(null, dat, {collapsed: false}).addTo(map); 
+				layersControl._container.id = "layersControl";
+				$(".leaflet-control-layers-overlays").prepend("<h4>Imagery layers</h4>");
+				$(".leaflet-control-layers-overlays").append('Video: <svg height="10" width="10"><circle cx="5" cy="5" r="5" fill="darkred"/></svg> &nbsp Photo: <svg height="10" width="10"><circle cx="5" cy="6" r="4" fill="darkorange" /></svg>'); 
+				
+				
+				var allLons = dat1.map(function(a){return Number(a.lon)});
+				var allLats = dat1.map(function(a){return Number(a.lat)})
+				map.fitBounds([[Math.min(...allLats), Math.min(...allLons)], [Math.max(...allLats), Math.max(...allLons)]]);
+			}
+			
+			function toObj(names, values) {
+				var result = {};
+				for (var i=0; i < names.length; i++) {
+					result[names[i]] = values[i];
+					result[names[i]].bounds = boundsList[i];
+				}
+				return result;
+			}
+			
+			
+			//The script can run by doing the command readData([url1, url2, ...]);
+			//This part just gets the example to load:
+			readData(["https://raw.githubusercontent.com/evantdailey/map_testing/master/S105SC2.json", "https://raw.githubusercontent.com/evantdailey/map_testing/master/fa2016668_wPics1.json"])
+			
+			wmsLayer("https://www.sciencebase.gov/arcgis/services/Catalog/555138ffe4b0a92fa7e91a0d/MapServer/WMSServer?request=GetCapabilities&service=WMS");
+			//wmsLayer("https://www.sciencebase.gov/arcgis/services/Catalog/58a37135e4b0c8251287616d/MapServer/WMSServer?request=GetCapabilities&service=WMS");
+			//wmsLayer("https://www.sciencebase.gov/arcgis/services/Catalog/555e29e8e4b0a92fa7eb9419/MapServer/WMSServer?request=GetCapabilities&service=WMS");
+			//wmsLayer("https://www.sciencebase.gov/arcgis/services/Catalog/59711ca8e4b0d1f9f065c419/MapServer/WMSServer?request=GetCapabilities&service=WMS");
+				
+		</script>
+	</body>
+</html>
